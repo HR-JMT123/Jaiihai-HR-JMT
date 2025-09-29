@@ -18,196 +18,112 @@
         .status-success .icon {font-size: 5rem; margin-bottom: 1rem;}
         .status-success h3 {font-weight: 700;}
         .status-success .datetime {background-color: #eaf6ec; font-size: 1.1rem; padding: 0.75rem; border-radius: 10px; margin-top: 1rem; text-align: left;}
-        
-        /* ================== [ เพิ่มส่วนนี้เข้ามา ] ================== */
-        .status-success p, .status-success .datetime {
-            color: #555555; /* สีเทาเข้ม */
-        }
-        /* ========================================================== */
-
+        .status-success p, .status-success .datetime {color: #555555;}
         @keyframes pop-in { 0% {transform: scale(0.5); opacity: 0;} 100% {transform: scale(1); opacity: 1;} }
     </style>
 </head>
 <body>
-
-<div class="main-card">
-    <img src="https://img5.pic.in.th/file/secure-sv1/-1920-x-300-px.png" alt="Company Logo" style="max-width: 250px; margin-bottom: 2rem;">
-    
-    <div id="step-1-employee-id">
-        <h3 class="card-title mb-3">กรอกรหัสพนักงาน</h3>
-        <div class="input-group mb-3">
-            <div class="input-group-prepend"><span class="input-group-text"><i class="fa-solid fa-id-card-clip"></i></span></div>
-            <input type="text" class="form-control form-control-lg" id="IdEmployee" placeholder="กรอกรหัสพนักงาน" required>
-        </div>
-        <button id="checkIdBtn" class="btn btn-primary btn-lg w-100 mt-3">ตรวจสอบข้อมูล</button>
-    </div>
-
-    <div id="step-2-scan-qr">
-        <h3 class="card-title mb-3">สแกน QR Code ร้านค้า</h3>
-        <div class="employee-info">
-            <strong id="displayNameScan"></strong> (<small id="displayIdScan"></small>)
-        </div>
-        <div id="qr-reader"></div>
-        <button id="cancelScanBtn" class="btn btn-secondary w-100 mt-3">ยกเลิก</button>
-    </div>
-
-    <div id="step-3-success-display">
-        <div class="status-success">
-            <div class="icon"><i class="fas fa-check-circle"></i></div>
-            <h3>บันทึกสำเร็จ</h3>
-            <p class="lead mb-0">คุณ <strong id="displayNameSuccess"></strong></p>
-            <p>ได้ทำรายการเรียบร้อยแล้ว</p>
-            <div class="datetime">
-                <i class="fas fa-store"></i>&nbsp; ร้านค้า: <strong id="displayShopIdSuccess"></strong><br>
-                <i class="fas fa-calendar-alt"></i>&nbsp; วันที่: <span id="displayDate"></span><br>
-                <i class="fas fa-clock"></i>&nbsp; เวลา: <span id="displayTime"></span>
+    <div class="main-card">
+        <img src="https://img5.pic.in.th/file/secure-sv1/-1920-x-300-px.png" alt="Company Logo" style="max-width: 250px; margin-bottom: 2rem;">
+        <div id="step-1-employee-id">
+            <h3 class="card-title mb-3">กรอกรหัสพนักงาน</h3>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend"><span class="input-group-text"><i class="fa-solid fa-id-card-clip"></i></span></div>
+                <input type="text" class="form-control form-control-lg" id="IdEmployee" placeholder="กรอกรหัสพนักงาน" required>
             </div>
+            <button id="checkIdBtn" class="btn btn-primary btn-lg w-100 mt-3">ตรวจสอบข้อมูล</button>
         </div>
-        <button id="resetBtn" class="btn btn-primary w-100 mt-4">ทำรายการใหม่</button>
+        <div id="step-2-scan-qr">
+            <h3 class="card-title mb-3">สแกน QR Code ร้านค้า</h3>
+            <div class="employee-info"><strong id="displayNameScan"></strong> (<small id="displayIdScan"></small>)</div>
+            <div id="qr-reader"></div>
+            <button id="cancelScanBtn" class="btn btn-secondary w-100 mt-3">ยกเลิก</button>
+        </div>
+        <div id="step-3-success-display">
+            <div class="status-success">
+                <div class="icon"><i class="fas fa-check-circle"></i></div>
+                <h3>บันทึกสำเร็จ</h3>
+                <p class="lead mb-0">คุณ <strong id="displayNameSuccess"></strong></p>
+                <p>ได้ทำรายการเรียบร้อยแล้ว</p>
+                <div class="datetime">
+                    <i class="fas fa-store"></i>&nbsp; ร้านค้า: <strong id="displayShopIdSuccess"></strong><br>
+                    <i class="fas fa-calendar-alt"></i>&nbsp; วันที่: <span id="displayDate"></span><br>
+                    <i class="fas fa-clock"></i>&nbsp; เวลา: <span id="displayTime"></span>
+                </div>
+            </div>
+            <button id="resetBtn" class="btn btn-primary w-100 mt-4">ทำรายการใหม่</button>
+        </div>
     </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
 
 <script>
-    // ####################################################################
-    // ##  สำคัญ! กรุณานำ URL ที่ได้จากการ Deploy ใหม่มาวางที่นี่         ##
-    // ####################################################################
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbzVlsbRuILBiKrbqyBEJNUqOska28g1VZlRYxJ14GFTQn1smkv33Hh0DDYNELfJbTL8Aw/exec';
-
-
-    // --- DOM Elements ---
-    const step1Div = document.getElementById('step-1-employee-id');
-    const step2Div = document.getElementById('step-2-scan-qr');
-    const step3Div = document.getElementById('step-3-success-display');
-    const employeeIdInput = document.getElementById('IdEmployee');
-    const checkIdBtn = document.getElementById('checkIdBtn');
-    const displayNameScan = document.getElementById('displayNameScan');
-    const displayIdScan = document.getElementById('displayIdScan');
-    const cancelScanBtn = document.getElementById('cancelScanBtn');
-    const displayNameSuccess = document.getElementById('displayNameSuccess');
-    const displayDate = document.getElementById('displayDate');
-    const displayTime = document.getElementById('displayTime');
-    const resetBtn = document.getElementById('resetBtn');
-    const displayShopIdSuccess = document.getElementById('displayShopIdSuccess');
-
-
-    // --- State Variables ---
-    let currentEmployeeId = null;
-    let currentFullName = null;
-    let html5QrCode = null;
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbx2sbtqDmy-Ifq6lURP40wSpy1Ol7xi0Ae99BcV-PPmtPThqQNe6TS7cpNhR-ho16_p2Q/exec';
+    
+    // --- DOM Elements และ State Variables เหมือนเดิม ---
+    const step1Div=document.getElementById("step-1-employee-id"),step2Div=document.getElementById("step-2-scan-qr"),step3Div=document.getElementById("step-3-success-display"),employeeIdInput=document.getElementById("IdEmployee"),checkIdBtn=document.getElementById("checkIdBtn"),displayNameScan=document.getElementById("displayNameScan"),displayIdScan=document.getElementById("displayIdScan"),cancelScanBtn=document.getElementById("cancelScanBtn"),displayNameSuccess=document.getElementById("displayNameSuccess"),displayDate=document.getElementById("displayDate"),displayTime=document.getElementById("displayTime"),resetBtn=document.getElementById("resetBtn"),displayShopIdSuccess=document.getElementById("displayShopIdSuccess");
+    let currentEmployeeId=null,currentFullName=null,html5QrCode=null;
 
     // --- Event Listeners ---
     checkIdBtn.addEventListener('click', checkEmployeeId);
     cancelScanBtn.addEventListener('click', resetPage);
     resetBtn.addEventListener('click', resetPage);
     
-    // --- Main Functions ---
-    function checkEmployeeId() {
-        const employeeId = employeeIdInput.value.trim();
-        if (employeeId === '') {
-            return Swal.fire('ผิดพลาด', 'กรุณากรอกรหัสพนักงาน', 'warning');
-        }
-        showLoading('กำลังตรวจสอบ...');
-        
-        const formData = new FormData();
-        formData.append('action', 'getEmployeeName');
-        formData.append('employeeId', employeeId);
-        
-        fetch(scriptURL, { method: 'POST', body: formData })
-            .then(response => response.json())
-            .then(data => {
-                Swal.close();
-                if (data.result === 'success') {
-                    currentEmployeeId = employeeId;
-                    currentFullName = data.name;
-                    displayNameScan.textContent = currentFullName;
-                    displayIdScan.textContent = `รหัส: ${currentEmployeeId}`;
-                    step1Div.style.display = 'none';
-                    step2Div.style.display = 'block';
-                    startScanner();
-                } else {
-                    Swal.fire('ไม่พบข้อมูล', 'ไม่พบรหัสพนักงานนี้ในระบบ กรุณาตรวจสอบอีกครั้ง', 'error');
-                }
-            })
-            .catch(error => {
-                handleFetchError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
-            });
-    }
+    // --- โค้ดส่วน checkEmployeeId เหมือนเดิม ---
+    function checkEmployeeId(){const e=employeeIdInput.value.trim();if(""===e)return Swal.fire("ผิดพลาด","กรุณากรอกรหัสพนักงาน","warning");showLoading("กำลังตรวจสอบ...");const t=new FormData;t.append("action","getEmployeeName"),t.append("employeeId",e),fetch(scriptURL,{method:"POST",body:t}).then(e=>e.json()).then(t=>{Swal.close(),"success"===t.result?(currentEmployeeId=e,currentFullName=t.name,displayNameScan.textContent=currentFullName,displayIdScan.textContent=`รหัส: ${currentEmployeeId}`,step1Div.style.display="none",step2Div.style.display="block",startScanner()):Swal.fire("ไม่พบข้อมูล","ไม่พบรหัสพนักงานนี้ในระบบ กรุณาตรวจสอบอีกครั้ง","error")}).catch(e=>{handleFetchError("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้")})}
 
+    // --- [ ปรับปรุง ] ฟังก์ชัน startScanner ---
     function startScanner() {
         html5QrCode = new Html5Qrcode("qr-reader");
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
         const successCallback = (decodedText, decodedResult) => {
             if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().then(() => saveData(decodedText));
+                // เมื่อสแกนติด ให้หยุดกล้องก่อน แล้วค่อยส่งไปตรวจสอบ
+                html5QrCode.stop().then(() => handleScanResult(decodedText));
             }
         };
         html5QrCode.start({ facingMode: "environment" }, config, successCallback)
             .catch(err => {
-                Swal.fire('เกิดข้อผิดพลาดกับกล้อง', 'ไม่สามารถเริ่มการทำงานของกล้องได้ กรุณาตรวจสอบการให้สิทธิ์ หรือลองเปิดในเบราว์เซอร์อื่น (เช่น Chrome)', 'error');
+                Swal.fire('เกิดข้อผิดพลาดกับกล้อง', 'ไม่สามารถเริ่มการทำงานของกล้องได้ กรุณาตรวจสอบการให้สิทธิ์', 'error');
             });
     }
 
-    function saveData(shopId) {
-        showLoading('กำลังบันทึกข้อมูล...');
+    // --- [ เพิ่ม ] ฟังก์ชันใหม่สำหรับตรวจสอบ QR Code ของร้านค้า ---
+    function handleScanResult(shopId) {
+        showLoading('กำลังตรวจสอบร้านค้า...');
         const formData = new FormData();
-        formData.append('action', 'saveScanData');
-        formData.append('รหัสพนักงาน', currentEmployeeId);
-        formData.append('ชื่อ-สกุล', currentFullName);
-        formData.append('ID Shop', shopId);
-        
+        formData.append('action', 'validateShop');
+        formData.append('shopId', shopId);
+
         fetch(scriptURL, { method: 'POST', body: formData })
             .then(response => response.json())
             .then(data => {
-                Swal.close();
                 if (data.result === 'success') {
-                    showSuccessScreen(shopId);
+                    // ถ้าตรวจสอบร้านค้าผ่าน ให้บันทึกข้อมูลต่อ
+                    saveData(shopId);
                 } else {
-                    throw new Error(data.message || 'Unknown server error');
+                    // ถ้าไม่ผ่าน ให้แจ้งเตือน และเริ่มสแกนใหม่
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'QR Code ไม่ถูกต้อง',
+                        text: 'ไม่พบข้อมูลร้านค้านี้ในระบบ กรุณาลองใหม่',
+                    }).then(() => {
+                        startScanner(); // เริ่มการสแกนอีกครั้ง
+                    });
                 }
             })
             .catch(error => {
-                handleFetchError(`ไม่สามารถบันทึกข้อมูลได้: ${error.message}`);
+                handleFetchError('เกิดข้อผิดพลาดในการตรวจสอบร้านค้า');
             });
     }
 
-    // --- Helper Functions ---
-    function showLoading(title) {
-        Swal.fire({ title: title, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    }
-
-    function handleFetchError(message) {
-        Swal.fire('เกิดข้อผิดพลาด', message, 'error');
-        resetPage();
-    }
-    
-    function showSuccessScreen(shopId) {
-        const now = new Date();
-        const optionsDate = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Bangkok' };
-        const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Bangkok', hour12: false };
-        
-        displayNameSuccess.textContent = currentFullName;
-        displayShopIdSuccess.textContent = shopId;
-        displayDate.textContent = `${now.toLocaleDateString('th-TH', optionsDate)}`;
-        displayTime.textContent = `${now.toLocaleTimeString('th-TH', optionsTime)} น.`;
-
-        step2Div.style.display = 'none';
-        step3Div.style.display = 'block';
-    }
-
-    function resetPage() {
-        if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop().catch(err => {});
-        }
-        step1Div.style.display = 'block';
-        step2Div.style.display = 'none';
-        step3Div.style.display = 'none';
-        employeeIdInput.value = '';
-        currentEmployeeId = null;
-        currentFullName = null;
-    }
+    // --- โค้ดส่วน saveData และอื่นๆ เหมือนเดิม ---
+    function saveData(e){showLoading("กำลังบันทึกข้อมูล...");const t=new FormData;t.append("action","saveScanData"),t.append("รหัสพนักงาน",currentEmployeeId),t.append("ชื่อ-สกุล",currentFullName),t.append("ID Shop",e),fetch(scriptURL,{method:"POST",body:t}).then(e=>e.json()).then(t=>{Swal.close(),"success"===t.result?showSuccessScreen(e):Swal.fire("บันทึกล้มเหลว",t.message||"Unknown server error","error")}).catch(e=>{handleFetchError(`ไม่สามารถบันทึกข้อมูลได้: ${e.message}`)})}
+    function showLoading(e){Swal.fire({title:e,allowOutsideClick:!1,didOpen:()=>Swal.showLoading()})}
+    function handleFetchError(e){Swal.fire("เกิดข้อผิดพลาด",e,"error"),resetPage()}
+    function showSuccessScreen(e){const t=new Date,n={year:"numeric",month:"long",day:"numeric",timeZone:"Asia/Bangkok"},o={hour:"2-digit",minute:"2-digit",second:"2-digit",timeZone:"Asia/Bangkok",hour12:!1};displayNameSuccess.textContent=currentFullName,displayShopIdSuccess.textContent=e,displayDate.textContent=`${t.toLocaleDateString("th-TH",n)}`,displayTime.textContent=`${t.toLocaleTimeString("th-TH",o)} น.`,step2Div.style.display="none",step3Div.style.display="block"}
+    function resetPage(){html5QrCode&&html5QrCode.isScanning&&html5QrCode.stop().catch(e=>{}),step1Div.style.display="block",step2Div.style.display="none",step3Div.style.display="none",employeeIdInput.value="",currentEmployeeId=null,currentFullName=null}
 </script>
 
 </body>
