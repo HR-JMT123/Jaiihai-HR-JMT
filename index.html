@@ -167,60 +167,66 @@
             });
     });
 
-    // --- Function to start QR Scanner (REVISED for Rear Camera Only) ---
+    // --- Function to start QR Scanner (NEW REVISED LOGIC) ---
     function startScanner() {
         html5QrCode = new Html5Qrcode("qr-reader");
 
         const qrCodeSuccessCallback = (decodedText, decodedResult) => {
             if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().then(ignore => {
-                    saveData(decodedText);
-                }).catch(err => {
-                    console.error("Failed to stop scanner cleanly.", err);
-                    saveData(decodedText);
-                });
+                html5QrCode.stop().then(ignore => saveData(decodedText))
+                    .catch(err => {
+                        console.error("Failed to stop scanner.", err);
+                        saveData(decodedText);
+                    });
             }
         };
 
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
         Html5Qrcode.getCameras().then(cameras => {
-            if (cameras && cameras.length) {
-                // **FIX 2: Find the rear camera ('environment') ONLY.**
-                const rearCamera = cameras.find(camera => camera.facing === 'environment');
-                
-                if (rearCamera) {
-                    html5QrCode.start(
-                        rearCamera.id,
-                        config,
-                        qrCodeSuccessCallback
-                    ).catch(err => {
-                        console.error("Failed to start scanner with the rear camera.", err);
-                        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเริ่มต้นสแกนเนอร์ได้', 'error');
-                        resetPage();
-                    });
-                } else {
-                    console.error("Rear camera not found.");
-                    Swal.fire('ไม่พบกล้องหลัง', 'ไม่พบกล้องหลังในอุปกรณ์ของคุณ', 'error');
-                    resetPage();
-                }
-            } else {
-                 console.error("No cameras found on this device.");
-                 Swal.fire('ไม่พบกล้อง', 'ไม่พบอุปกรณ์กล้องในเครื่องของคุณ', 'error');
-                 resetPage();
+            if (!cameras || cameras.length === 0) {
+                throw new Error("ไม่พบกล้องในอุปกรณ์ของคุณ");
             }
+
+            let cameraIdToUse = null;
+
+            if (cameras.length === 1) {
+                // If only one camera, use it.
+                cameraIdToUse = cameras[0].id;
+            } else {
+                // If multiple cameras, find the best match.
+                // 1. Look for 'environment' facing mode
+                let rearCamera = cameras.find(c => c.facing === "environment");
+                if (rearCamera) {
+                    cameraIdToUse = rearCamera.id;
+                } else {
+                    // 2. If not found, look for 'back' or 'rear' in the label
+                    rearCamera = cameras.find(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('rear'));
+                    if (rearCamera) {
+                        cameraIdToUse = rearCamera.id;
+                    } else {
+                        // 3. As a last resort, use the last camera in the list
+                        cameraIdToUse = cameras[cameras.length - 1].id;
+                    }
+                }
+            }
+
+            // Start the scanner with the determined camera ID
+            html5QrCode.start(cameraIdToUse, config, qrCodeSuccessCallback)
+                .catch(err => {
+                    console.error("Final attempt to start scanner failed.", err);
+                    throw new Error("ไม่สามารถเริ่มต้นการทำงานของกล้องได้");
+                });
+
         }).catch(err => {
-            console.error("Error getting camera permissions:", err);
-            Swal.fire(
-                'เกิดข้อผิดพลาดเรื่องสิทธิ์',
-                'ไม่สามารถเปิดกล้องได้ กรุณา "อนุญาต" ให้เว็บไซต์เข้าถึงกล้องก่อน',
-                'error'
-            );
+            // This catch block handles all errors from getting cameras to starting the scanner
+            console.error(err);
+            Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
             resetPage();
         });
     }
 
-    // --- Function to save data to Google Sheet (REVISED Keys) ---
+    // --- Function to save data to Google Sheet ---
     function saveData(shopId) {
         Swal.fire({
             title: 'กำลังบันทึกข้อมูล...',
@@ -230,10 +236,9 @@
 
         const formData = new FormData();
         formData.append('action', 'saveScanData');
-        // **FIX 1: Make keys EXACTLY match Google Sheet headers.**
         formData.append('รหัสพนักงาน', currentEmployeeId);
-        formData.append('ชื่อ-สกุล', currentFullName); // Changed from 'ชื่อสกุล'
-        formData.append('ID Shop', shopId);          // Changed from 'IDShop'
+        formData.append('ชื่อ-สกุล', currentFullName);
+        formData.append('ID Shop', shopId);
 
         fetch(scriptURL, { method: 'POST', body: formData })
             .then(response => response.json())
@@ -256,7 +261,7 @@
             })
             .catch(error => {
                 Swal.fire('บันทึกข้อมูลล้มเหลว!', `ไม่สามารถบันทึกข้อมูลได้: ${error.message}`, 'error');
-                resetPage(); // Reset to allow retrying
+                resetPage();
             });
     }
     
