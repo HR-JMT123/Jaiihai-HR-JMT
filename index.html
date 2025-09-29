@@ -41,7 +41,7 @@
             background-color: #e9f5ff; color: #0366d6; padding: 1rem;
             border-radius: 12px; margin-bottom: 1.5rem; font-size: 1.1rem;
         }
-        #qr-reader { width:100%; }
+        #qr-reader { width:100%; border-radius: 10px; border: 1px solid #ddd; }
 
         .status-success {
             color: #28a745; border: 3px solid #28a745; border-radius: 15px;
@@ -110,7 +110,7 @@
 
 <script>
     // --- Configuration ---
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbxvEeclwxuOhIqeF1ODf-Itg0ykDVQ294u1Ok11L19N64ND_o4Kx-TFTLrmbrhGdvZejA/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzLVEFZGZRhJY77RKK31NPJN3_8Iz52aAIS_BrW9_thTwPcT9s_8qDkq2imJ-YvqZMFKg/exec';
 
     // --- DOM Elements ---
     const step1Div = document.getElementById('step-1-employee-id');
@@ -167,7 +167,7 @@
             });
     });
 
-    // --- Function to start QR Scanner (NEW REVISED LOGIC) ---
+    // --- Function to start QR Scanner (REVISED) ---
     function startScanner() {
         html5QrCode = new Html5Qrcode("qr-reader");
 
@@ -176,54 +176,23 @@
                 html5QrCode.stop().then(ignore => saveData(decodedText))
                     .catch(err => {
                         console.error("Failed to stop scanner.", err);
-                        saveData(decodedText);
+                        saveData(decodedText); // พยายามบันทึกต่อไปแม้จะหยุดกล้องไม่ได้
                     });
             }
         };
 
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        const config = { 
+            fps: 10, 
+            qrbox: { width: 250, height: 250 } 
+        };
 
-        Html5Qrcode.getCameras().then(cameras => {
-            if (!cameras || cameras.length === 0) {
-                throw new Error("ไม่พบกล้องในอุปกรณ์ของคุณ");
-            }
-
-            let cameraIdToUse = null;
-
-            if (cameras.length === 1) {
-                // If only one camera, use it.
-                cameraIdToUse = cameras[0].id;
-            } else {
-                // If multiple cameras, find the best match.
-                // 1. Look for 'environment' facing mode
-                let rearCamera = cameras.find(c => c.facing === "environment");
-                if (rearCamera) {
-                    cameraIdToUse = rearCamera.id;
-                } else {
-                    // 2. If not found, look for 'back' or 'rear' in the label
-                    rearCamera = cameras.find(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('rear'));
-                    if (rearCamera) {
-                        cameraIdToUse = rearCamera.id;
-                    } else {
-                        // 3. As a last resort, use the last camera in the list
-                        cameraIdToUse = cameras[cameras.length - 1].id;
-                    }
-                }
-            }
-
-            // Start the scanner with the determined camera ID
-            html5QrCode.start(cameraIdToUse, config, qrCodeSuccessCallback)
-                .catch(err => {
-                    console.error("Final attempt to start scanner failed.", err);
-                    throw new Error("ไม่สามารถเริ่มต้นการทำงานของกล้องได้");
-                });
-
-        }).catch(err => {
-            // This catch block handles all errors from getting cameras to starting the scanner
-            console.error(err);
-            Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
-            resetPage();
-        });
+        // ร้องขอกล้องหลังโดยตรง ซึ่งเป็นวิธีที่แนะนำและมีประสิทธิภาพ
+        html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+            .catch(err => {
+                console.error("ไม่สามารถเริ่มการทำงานของกล้องได้", err);
+                Swal.fire('เกิดข้อผิดพลาดกับกล้อง', 'ไม่สามารถเริ่มต้นการทำงานของกล้องได้ กรุณาตรวจสอบการให้สิทธิ์ หรือลองเปิดในเบราว์เซอร์อื่น (เช่น Chrome หรือ Safari)', 'error');
+                resetPage();
+            });
     }
 
     // --- Function to save data to Google Sheet ---
@@ -237,7 +206,7 @@
         const formData = new FormData();
         formData.append('action', 'saveScanData');
         formData.append('รหัสพนักงาน', currentEmployeeId);
-        formData.append('ชื่อ-สกุล', currentFullName);
+        formData.append('ชื่อนามสกุล', currentFullName);
         formData.append('ID Shop', shopId);
 
         fetch(scriptURL, { method: 'POST', body: formData })
@@ -284,4 +253,3 @@
 
 </body>
 </html>
-
