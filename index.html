@@ -17,7 +17,7 @@
         .status-success {color: #28a745; border: 3px solid #28a745; border-radius: 15px; padding: 2rem; animation: pop-in 0.5s ease-out;}
         .status-success .icon {font-size: 5rem; margin-bottom: 1rem;}
         .status-success h3 {font-weight: 700;}
-        .status-success .datetime {background-color: #eaf6ec; font-size: 1.1rem; padding: 0.75rem; border-radius: 10px; margin-top: 1rem;}
+        .status-success .datetime {background-color: #eaf6ec; font-size: 1.1rem; padding: 0.75rem; border-radius: 10px; margin-top: 1rem; text-align: left;} /* <-- ปรับเป็นชิดซ้าย */
         @keyframes pop-in { 0% {transform: scale(0.5); opacity: 0;} 100% {transform: scale(1); opacity: 1;} }
     </style>
 </head>
@@ -51,8 +51,9 @@
             <p class="lead mb-0">คุณ <strong id="displayNameSuccess"></strong></p>
             <p>ได้ทำรายการเรียบร้อยแล้ว</p>
             <div class="datetime">
-                <i class="fas fa-calendar-alt"></i> <span id="displayDate"></span><br>
-                <i class="fas fa-clock"></i> <span id="displayTime"></span>
+                <i class="fas fa-store"></i>&nbsp; ร้านค้า: <strong id="displayShopIdSuccess"></strong><br>
+                <i class="fas fa-calendar-alt"></i>&nbsp; วันที่: <span id="displayDate"></span><br>
+                <i class="fas fa-clock"></i>&nbsp; เวลา: <span id="displayTime"></span>
             </div>
         </div>
         <button id="resetBtn" class="btn btn-primary w-100 mt-4">ทำรายการใหม่</button>
@@ -66,7 +67,7 @@
     // ####################################################################
     // ##  สำคัญ! กรุณานำ URL ที่ได้จากการ Deploy ใหม่มาวางที่นี่         ##
     // ####################################################################
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbzVlsbRuILBiKrbqyBEJNUqOska28g1VZlRYxJ14GFTQn1smkv33Hh0DDYNELfJbTL8Aw/exec';
+    const scriptURL = 'กรุณานำ URL ที่ได้จากการ Deploy ใหม่มาวางที่นี่';
 
 
     // --- DOM Elements ---
@@ -82,6 +83,9 @@
     const displayDate = document.getElementById('displayDate');
     const displayTime = document.getElementById('displayTime');
     const resetBtn = document.getElementById('resetBtn');
+    // --- [ เพิ่ม ] Element ของ ID Shop ---
+    const displayShopIdSuccess = document.getElementById('displayShopIdSuccess');
+
 
     // --- State Variables ---
     let currentEmployeeId = null;
@@ -153,7 +157,8 @@
             .then(data => {
                 Swal.close();
                 if (data.result === 'success') {
-                    showSuccessScreen();
+                    // --- [ แก้ไข ] ส่งค่า shopId ไปด้วย ---
+                    showSuccessScreen(shopId);
                 } else {
                     throw new Error(data.message || 'Unknown server error');
                 }
@@ -173,13 +178,18 @@
         resetPage();
     }
     
-    function showSuccessScreen() {
+    // --- [ แก้ไข ] รับค่า shopId เข้ามา ---
+    function showSuccessScreen(shopId) {
         const now = new Date();
         const optionsDate = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Bangkok' };
         const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Bangkok', hour12: false };
+        
         displayNameSuccess.textContent = currentFullName;
-        displayDate.textContent = `วันที่: ${now.toLocaleDateString('th-TH', optionsDate)}`;
-        displayTime.textContent = `เวลา: ${now.toLocaleTimeString('th-TH', optionsTime)} น.`;
+        // --- [ เพิ่ม ] แสดงผล ID Shop ---
+        displayShopIdSuccess.textContent = shopId;
+        displayDate.textContent = `${now.toLocaleDateString('th-TH', optionsDate)}`;
+        displayTime.textContent = `${now.toLocaleTimeString('th-TH', optionsTime)} น.`;
+
         step2Div.style.display = 'none';
         step3Div.style.display = 'block';
     }
