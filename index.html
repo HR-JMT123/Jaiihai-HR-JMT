@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canteen JMT</title>
+    <title>Scan & Verify - JMT</title>
 
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -34,7 +34,6 @@
         .card-title {
             font-weight: 700; color: #333; font-size: 1.75rem;
         }
-        /* ซ่อนขั้นตอนอื่นที่ไม่ใช่ขั้นตอนแรก */
         #step-2-scan-qr, #step-3-success-display {
             display: none;
         }
@@ -44,7 +43,6 @@
         }
         #qr-reader { width:100%; }
 
-        /* --- สไตล์สำหรับหน้าแสดงผลสำเร็จ --- */
         .status-success {
             color: #28a745; border: 3px solid #28a745; border-radius: 15px;
             padding: 2rem; animation: pop-in 0.5s ease-out;
@@ -71,7 +69,7 @@
     <img src="https://img5.pic.in.th/file/secure-sv1/-1920-x-300-px.png" alt="Company Logo" style="max-width: 250px; margin-bottom: 2rem;">
     
     <div id="step-1-employee-id">
-        <h3 class="card-title mb-3">กรอกรหัสพนักงาน</h3>
+        <h3 class="card-title mb-3">ยืนยันตัวตนพนักงาน</h3>
         <div class="mb-3 text-left">
             <label for="IdEmployee" class="form-label">Employee ID</label>
             <div class="input-group">
@@ -112,7 +110,7 @@
 
 <script>
     // --- Configuration ---
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbzvpcupIx9HI0R-wSeQ872jvVkFVe2FoxugwucnHylfptEkThSlj2HXADok7KTore_Baw/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxcHmiYl7gfA6APCq-o5z1cmatmzVy4S2a2WQ5tnSGIGiHfS0T_OyptCVCfBeLQzHHa-g/exec'; // ◀️ **สำคัญ:** ใส่ URL ของคุณที่นี่
 
     // --- DOM Elements ---
     const step1Div = document.getElementById('step-1-employee-id');
@@ -120,13 +118,9 @@
     const step3Div = document.getElementById('step-3-success-display');
     const employeeIdInput = document.getElementById('IdEmployee');
     const checkIdBtn = document.getElementById('checkIdBtn');
-    
-    // Step 2 Elements
     const displayNameScan = document.getElementById('displayNameScan');
     const displayIdScan = document.getElementById('displayIdScan');
     const cancelScanBtn = document.getElementById('cancelScanBtn');
-
-    // Step 3 Elements
     const displayNameSuccess = document.getElementById('displayNameSuccess');
     const displayDate = document.getElementById('displayDate');
     const displayTime = document.getElementById('displayTime');
@@ -144,17 +138,14 @@
             Swal.fire('ผิดพลาด', 'กรุณากรอกรหัสพนักงาน', 'warning');
             return;
         }
-
         Swal.fire({
             title: 'กำลังตรวจสอบ...',
             allowOutsideClick: false,
             didOpen: () => { Swal.showLoading(); }
         });
-
         const formData = new FormData();
         formData.append('action', 'getEmployeeName');
         formData.append('employeeId', employeeId);
-
         fetch(scriptURL, { method: 'POST', body: formData })
             .then(response => response.json())
             .then(data => {
@@ -162,10 +153,8 @@
                 if (data.result === 'success') {
                     currentEmployeeId = employeeId;
                     currentFullName = data.name;
-                    
                     displayNameScan.textContent = currentFullName;
                     displayIdScan.textContent = `รหัส: ${currentEmployeeId}`;
-
                     step1Div.style.display = 'none';
                     step2Div.style.display = 'block';
                     startScanner();
@@ -188,8 +177,16 @@
         };
 
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-        // การเรียกใช้ส่วนนี้ จะเป็นการ "บังคับ" ให้ Browser ขออนุญาตใช้กล้อง
-        html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+        
+        // --- ส่วนที่แก้ไขเรื่องซูม ---
+        // สร้างเงื่อนไขสำหรับกล้องหลัง พร้อม "ขอ" ให้ใช้ซูม 1x
+        const videoConstraints = {
+            facingMode: "environment",
+            advanced: [{ zoom: 1.0 }]
+        };
+
+        // เริ่มการทำงานของกล้องด้วยเงื่อนไขใหม่
+        html5QrCode.start(videoConstraints, config, qrCodeSuccessCallback)
             .catch(err => {
                  Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบการตั้งค่าและอนุญาตให้เว็บเข้าถึงกล้อง', 'error');
                  resetPage();
@@ -215,7 +212,6 @@
             .then(data => {
                 Swal.close();
                 if (data.result === 'success') {
-                    // จัดการแสดงผลหน้า Success
                     const now = new Date();
                     const optionsDate = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Bangkok' };
                     const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Bangkok', hour12: false };
