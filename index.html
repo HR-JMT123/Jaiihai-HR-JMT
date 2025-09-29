@@ -4,63 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canteen JMT</title>
-
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
     <style>
-        body {
-            font-family: 'Sarabun', sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 1rem;
-        }
-        .main-card {
-            background-color: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-            width: 100%;
-            overflow: hidden;
-            text-align: center;
-            padding: 2.5rem;
-        }
-        .card-title {
-            font-weight: 700; color: #333; font-size: 1.75rem;
-        }
-        #step-2-scan-qr, #step-3-success-display {
-            display: none;
-        }
-        .employee-info {
-            background-color: #e9f5ff; color: #0366d6; padding: 1rem;
-            border-radius: 12px; margin-bottom: 1.5rem; font-size: 1.1rem;
-        }
-        #qr-reader { width:100%; border-radius: 10px; border: 1px solid #ddd; }
-
-        .status-success {
-            color: #28a745; border: 3px solid #28a745; border-radius: 15px;
-            padding: 2rem; animation: pop-in 0.5s ease-out;
-        }
-        .status-success .icon {
-            font-size: 5rem; margin-bottom: 1rem;
-        }
-        .status-success h3 {
-            font-weight: 700;
-        }
-        .status-success .datetime {
-            background-color: #eaf6ec; font-size: 1.1rem;
-            padding: 0.75rem; border-radius: 10px; margin-top: 1rem;
-        }
-        @keyframes pop-in {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
+        body {font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 1rem;}
+        .main-card {background-color: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 500px; width: 100%; overflow: hidden; text-align: center; padding: 2.5rem;}
+        .card-title {font-weight: 700; color: #333; font-size: 1.75rem;}
+        #step-2-scan-qr, #step-3-success-display {display: none;}
+        .employee-info {background-color: #e9f5ff; color: #0366d6; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-size: 1.1rem;}
+        #qr-reader {width:100%; border-radius: 10px; border: 1px solid #ddd;}
+        .status-success {color: #28a745; border: 3px solid #28a745; border-radius: 15px; padding: 2rem; animation: pop-in 0.5s ease-out;}
+        .status-success .icon {font-size: 5rem; margin-bottom: 1rem;}
+        .status-success h3 {font-weight: 700;}
+        .status-success .datetime {background-color: #eaf6ec; font-size: 1.1rem; padding: 0.75rem; border-radius: 10px; margin-top: 1rem;}
+        @keyframes pop-in { 0% {transform: scale(0.5); opacity: 0;} 100% {transform: scale(1); opacity: 1;} }
     </style>
 </head>
 <body>
@@ -70,23 +28,19 @@
     
     <div id="step-1-employee-id">
         <h3 class="card-title mb-3">กรอกรหัสพนักงาน</h3>
-        <div class="mb-3 text-left">
-            <label for="IdEmployee" class="form-label">Employee ID</label>
-            <div class="input-group">
-                <div class="input-group-prepend"><span class="input-group-text"><i class="fa-solid fa-id-card-clip"></i></span></div>
-                <input type="text" class="form-control" id="IdEmployee" placeholder="กรอกรหัสพนักงาน" required>
-            </div>
+        <div class="input-group mb-3">
+            <div class="input-group-prepend"><span class="input-group-text"><i class="fa-solid fa-id-card-clip"></i></span></div>
+            <input type="text" class="form-control form-control-lg" id="IdEmployee" placeholder="กรอกรหัสพนักงาน" required>
         </div>
         <button id="checkIdBtn" class="btn btn-primary btn-lg w-100 mt-3">ตรวจสอบข้อมูล</button>
     </div>
 
     <div id="step-2-scan-qr">
         <h3 class="card-title mb-3">สแกน QR Code ร้านค้า</h3>
-        <div id="employee-info" class="employee-info">
+        <div class="employee-info">
             <strong id="displayNameScan"></strong> (<small id="displayIdScan"></small>)
         </div>
         <div id="qr-reader"></div>
-        <p class="mt-3 text-muted">กรุณาให้สิทธิ์การเข้าถึงกล้อง และหันกล้องไปที่ QR Code</p>
         <button id="cancelScanBtn" class="btn btn-secondary w-100 mt-3">ยกเลิก</button>
     </div>
 
@@ -109,8 +63,11 @@
 <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
 
 <script>
-    // --- Configuration ---
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbzLVEFZGZRhJY77RKK31NPJN3_8Iz52aAIS_BrW9_thTwPcT9s_8qDkq2imJ-YvqZMFKg/exec';
+    // ####################################################################
+    // ##  สำคัญ! กรุณานำ URL ที่ได้จากการ Deploy ใหม่มาวางที่นี่         ##
+    // ####################################################################
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzVlsbRuILBiKrbqyBEJNUqOska28g1VZlRYxJ14GFTQn1smkv33Hh0DDYNELfJbTL8Aw/exec';
+
 
     // --- DOM Elements ---
     const step1Div = document.getElementById('step-1-employee-id');
@@ -131,21 +88,23 @@
     let currentFullName = null;
     let html5QrCode = null;
 
-    // --- Function to check Employee ID ---
-    checkIdBtn.addEventListener('click', () => {
+    // --- Event Listeners ---
+    checkIdBtn.addEventListener('click', checkEmployeeId);
+    cancelScanBtn.addEventListener('click', resetPage);
+    resetBtn.addEventListener('click', resetPage);
+    
+    // --- Main Functions ---
+    function checkEmployeeId() {
         const employeeId = employeeIdInput.value.trim();
         if (employeeId === '') {
-            Swal.fire('ผิดพลาด', 'กรุณากรอกรหัสพนักงาน', 'warning');
-            return;
+            return Swal.fire('ผิดพลาด', 'กรุณากรอกรหัสพนักงาน', 'warning');
         }
-        Swal.fire({
-            title: 'กำลังตรวจสอบ...',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-        });
+        showLoading('กำลังตรวจสอบ...');
+        
         const formData = new FormData();
         formData.append('action', 'getEmployeeName');
         formData.append('employeeId', employeeId);
+        
         fetch(scriptURL, { method: 'POST', body: formData })
             .then(response => response.json())
             .then(data => {
@@ -163,81 +122,71 @@
                 }
             })
             .catch(error => {
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
-            });
-    });
-
-    // --- Function to start QR Scanner (REVISED) ---
-    function startScanner() {
-        html5QrCode = new Html5Qrcode("qr-reader");
-
-        const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-            if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().then(ignore => saveData(decodedText))
-                    .catch(err => {
-                        console.error("Failed to stop scanner.", err);
-                        saveData(decodedText); // พยายามบันทึกต่อไปแม้จะหยุดกล้องไม่ได้
-                    });
-            }
-        };
-
-        const config = { 
-            fps: 10, 
-            qrbox: { width: 250, height: 250 } 
-        };
-
-        // ร้องขอกล้องหลังโดยตรง ซึ่งเป็นวิธีที่แนะนำและมีประสิทธิภาพ
-        html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
-            .catch(err => {
-                console.error("ไม่สามารถเริ่มการทำงานของกล้องได้", err);
-                Swal.fire('เกิดข้อผิดพลาดกับกล้อง', 'ไม่สามารถเริ่มต้นการทำงานของกล้องได้ กรุณาตรวจสอบการให้สิทธิ์ หรือลองเปิดในเบราว์เซอร์อื่น (เช่น Chrome หรือ Safari)', 'error');
-                resetPage();
+                handleFetchError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
             });
     }
 
-    // --- Function to save data to Google Sheet ---
-    function saveData(shopId) {
-        Swal.fire({
-            title: 'กำลังบันทึกข้อมูล...',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-        });
+    function startScanner() {
+        html5QrCode = new Html5Qrcode("qr-reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        const successCallback = (decodedText, decodedResult) => {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => saveData(decodedText));
+            }
+        };
+        html5QrCode.start({ facingMode: "environment" }, config, successCallback)
+            .catch(err => {
+                Swal.fire('เกิดข้อผิดพลาดกับกล้อง', 'ไม่สามารถเริ่มการทำงานของกล้องได้ กรุณาตรวจสอบการให้สิทธิ์ หรือลองเปิดในเบราว์เซอร์อื่น (เช่น Chrome)', 'error');
+            });
+    }
 
+    function saveData(shopId) {
+        showLoading('กำลังบันทึกข้อมูล...');
         const formData = new FormData();
         formData.append('action', 'saveScanData');
         formData.append('รหัสพนักงาน', currentEmployeeId);
-        formData.append('ชื่อนามสกุล', currentFullName);
+        formData.append('ชื่อ-สกุล', currentFullName);
         formData.append('ID Shop', shopId);
-
+        
         fetch(scriptURL, { method: 'POST', body: formData })
             .then(response => response.json())
             .then(data => {
                 Swal.close();
                 if (data.result === 'success') {
-                    const now = new Date();
-                    const optionsDate = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Bangkok' };
-                    const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Bangkok', hour12: false };
-
-                    displayNameSuccess.textContent = currentFullName;
-                    displayDate.textContent = `วันที่: ${now.toLocaleDateString('th-TH', optionsDate)}`;
-                    displayTime.textContent = `เวลา: ${now.toLocaleTimeString('th-TH', optionsTime)} น.`;
-
-                    step2Div.style.display = 'none';
-                    step3Div.style.display = 'block';
-                } else { 
-                    throw new Error(data.error || 'Unknown error from server'); 
+                    showSuccessScreen();
+                } else {
+                    throw new Error(data.message || 'Unknown server error');
                 }
             })
             .catch(error => {
-                Swal.fire('บันทึกข้อมูลล้มเหลว!', `ไม่สามารถบันทึกข้อมูลได้: ${error.message}`, 'error');
-                resetPage();
+                handleFetchError(`ไม่สามารถบันทึกข้อมูลได้: ${error.message}`);
             });
     }
+
+    // --- Helper Functions ---
+    function showLoading(title) {
+        Swal.fire({ title: title, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    }
+
+    function handleFetchError(message) {
+        Swal.fire('เกิดข้อผิดพลาด', message, 'error');
+        resetPage();
+    }
     
-    // --- Function to reset the page to Step 1 ---
+    function showSuccessScreen() {
+        const now = new Date();
+        const optionsDate = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Bangkok' };
+        const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Bangkok', hour12: false };
+        displayNameSuccess.textContent = currentFullName;
+        displayDate.textContent = `วันที่: ${now.toLocaleDateString('th-TH', optionsDate)}`;
+        displayTime.textContent = `เวลา: ${now.toLocaleTimeString('th-TH', optionsTime)} น.`;
+        step2Div.style.display = 'none';
+        step3Div.style.display = 'block';
+    }
+
     function resetPage() {
         if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop().catch(err => { /* ignore cleanup error */ });
+            html5QrCode.stop().catch(err => {});
         }
         step1Div.style.display = 'block';
         step2Div.style.display = 'none';
@@ -246,9 +195,6 @@
         currentEmployeeId = null;
         currentFullName = null;
     }
-
-    cancelScanBtn.addEventListener('click', resetPage);
-    resetBtn.addEventListener('click', resetPage);
 </script>
 
 </body>
