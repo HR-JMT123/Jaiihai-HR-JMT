@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Scanner - JMT</title>
+    <title>Canteen JMT</title>
 
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,7 +21,7 @@
             min-height: 100vh;
             padding: 1rem;
         }
-        .scanner-card {
+        .main-card {
             background-color: white;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -32,45 +32,46 @@
             padding: 2.5rem;
         }
         .card-title {
-            font-weight: 700;
-            color: #333;
-            font-size: 1.75rem;
+            font-weight: 700; color: #333; font-size: 1.75rem;
         }
-        .form-label {
-            font-weight: 500;
-        }
-        #qr-video {
-            width: 100%;
-            border-radius: 15px;
-            border: 2px solid #eee;
-            margin-top: 1rem;
-        }
-        #step-2-scan-qr {
-            display: none; /* Hide scanner by default */
+        /* ซ่อนขั้นตอนอื่นที่ไม่ใช่ขั้นตอนแรก */
+        #step-2-scan-qr, #step-3-success-display {
+            display: none;
         }
         .employee-info {
-            background-color: #e9f5ff;
-            color: #0366d6;
-            padding: 1rem;
-            border-radius: 12px;
-            margin-bottom: 1.5rem;
-            font-size: 1.1rem;
+            background-color: #e9f5ff; color: #0366d6; padding: 1rem;
+            border-radius: 12px; margin-bottom: 1.5rem; font-size: 1.1rem;
         }
-        .btn-primary {
-            background: linear-gradient(45deg, #007bff, #0056b3);
+        #qr-reader { width:100%; }
+
+        /* --- สไตล์สำหรับหน้าแสดงผลสำเร็จ --- */
+        .status-success {
+            color: #28a745; border: 3px solid #28a745; border-radius: 15px;
+            padding: 2rem; animation: pop-in 0.5s ease-out;
         }
-        .btn-secondary {
-            background-color: #6c757d;
+        .status-success .icon {
+            font-size: 5rem; margin-bottom: 1rem;
+        }
+        .status-success h3 {
+            font-weight: 700;
+        }
+        .status-success .datetime {
+            background-color: #eaf6ec; font-size: 1.1rem;
+            padding: 0.75rem; border-radius: 10px; margin-top: 1rem;
+        }
+        @keyframes pop-in {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
     </style>
 </head>
 <body>
 
-<div class="scanner-card">
+<div class="main-card">
     <img src="https://img5.pic.in.th/file/secure-sv1/-1920-x-300-px.png" alt="Company Logo" style="max-width: 250px; margin-bottom: 2rem;">
     
     <div id="step-1-employee-id">
-        <h3 class="card-title mb-3">ยืนยันตัวตนพนักงาน</h3>
+        <h3 class="card-title mb-3">กรอกรหัสพนักงาน</h3>
         <div class="mb-3 text-left">
             <label for="IdEmployee" class="form-label">Employee ID</label>
             <div class="input-group">
@@ -84,12 +85,25 @@
     <div id="step-2-scan-qr">
         <h3 class="card-title mb-3">สแกน QR Code ร้านค้า</h3>
         <div id="employee-info" class="employee-info">
-            <strong id="displayName"></strong><br>
-            <small id="displayId"></small>
+            <strong id="displayNameScan"></strong> (<small id="displayIdScan"></small>)
         </div>
-        <div id="qr-reader" style="width:100%;"></div>
-        <p id="scanned-result" class="mt-3 text-muted">กรุณาหันกล้องไปที่ QR Code</p>
-        <button id="resetBtn" class="btn btn-secondary w-100 mt-3">กลับไปกรอกรหัสใหม่</button>
+        <div id="qr-reader"></div>
+        <p class="mt-3 text-muted">กรุณาให้สิทธิ์การเข้าถึงกล้อง และหันกล้องไปที่ QR Code</p>
+        <button id="cancelScanBtn" class="btn btn-secondary w-100 mt-3">ยกเลิก</button>
+    </div>
+
+    <div id="step-3-success-display">
+        <div class="status-success">
+            <div class="icon"><i class="fas fa-check-circle"></i></div>
+            <h3>บันทึกสำเร็จ</h3>
+            <p class="lead mb-0">คุณ <strong id="displayNameSuccess"></strong></p>
+            <p>ได้ทำรายการเรียบร้อยแล้ว</p>
+            <div class="datetime">
+                <i class="fas fa-calendar-alt"></i> <span id="displayDate"></span><br>
+                <i class="fas fa-clock"></i> <span id="displayTime"></span>
+            </div>
+        </div>
+        <button id="resetBtn" class="btn btn-primary w-100 mt-4">ทำรายการใหม่</button>
     </div>
 </div>
 
@@ -98,17 +112,25 @@
 
 <script>
     // --- Configuration ---
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbylPv5Qs5YhO4Hw-r1n4T2jFIu2inlAMDr1K5sxqdoY5kv_56_Cqd6246qnqoEciNsbLw/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzvpcupIx9HI0R-wSeQ872jvVkFVe2FoxugwucnHylfptEkThSlj2HXADok7KTore_Baw/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
 
     // --- DOM Elements ---
     const step1Div = document.getElementById('step-1-employee-id');
     const step2Div = document.getElementById('step-2-scan-qr');
+    const step3Div = document.getElementById('step-3-success-display');
     const employeeIdInput = document.getElementById('IdEmployee');
     const checkIdBtn = document.getElementById('checkIdBtn');
+    
+    // Step 2 Elements
+    const displayNameScan = document.getElementById('displayNameScan');
+    const displayIdScan = document.getElementById('displayIdScan');
+    const cancelScanBtn = document.getElementById('cancelScanBtn');
+
+    // Step 3 Elements
+    const displayNameSuccess = document.getElementById('displayNameSuccess');
+    const displayDate = document.getElementById('displayDate');
+    const displayTime = document.getElementById('displayTime');
     const resetBtn = document.getElementById('resetBtn');
-    const displayName = document.getElementById('displayName');
-    const displayId = document.getElementById('displayId');
-    const scannedResult = document.getElementById('scanned-result');
 
     // --- State Variables ---
     let currentEmployeeId = null;
@@ -141,8 +163,8 @@
                     currentEmployeeId = employeeId;
                     currentFullName = data.name;
                     
-                    displayName.textContent = `ชื่อ: ${currentFullName}`;
-                    displayId.textContent = `รหัส: ${currentEmployeeId}`;
+                    displayNameScan.textContent = currentFullName;
+                    displayIdScan.textContent = `รหัส: ${currentEmployeeId}`;
 
                     step1Div.style.display = 'none';
                     step2Div.style.display = 'block';
@@ -153,7 +175,6 @@
             })
             .catch(error => {
                 Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
-                console.error('Error fetching employee name:', error);
             });
     });
 
@@ -161,24 +182,24 @@
     function startScanner() {
         html5QrCode = new Html5Qrcode("qr-reader");
         const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-            // Stop scanning once a QR is detected
             html5QrCode.stop().then(ignore => {
-                scannedResult.textContent = `สแกนสำเร็จ: ${decodedText}`;
                 saveData(decodedText);
-            }).catch(err => {
-                console.error("Failed to stop scanner", err);
-            });
+            }).catch(err => console.error("Failed to stop scanner", err));
         };
 
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-        html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback);
+        // การเรียกใช้ส่วนนี้ จะเป็นการ "บังคับ" ให้ Browser ขออนุญาตใช้กล้อง
+        html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+            .catch(err => {
+                 Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบการตั้งค่าและอนุญาตให้เว็บเข้าถึงกล้อง', 'error');
+                 resetPage();
+            });
     }
 
     // --- Function to save data to Google Sheet ---
     function saveData(shopId) {
         Swal.fire({
             title: 'กำลังบันทึกข้อมูล...',
-            text: 'กรุณารอสักครู่',
             allowOutsideClick: false,
             didOpen: () => { Swal.showLoading(); }
         });
@@ -186,42 +207,47 @@
         const formData = new FormData();
         formData.append('action', 'saveScanData');
         formData.append('รหัสพนักงาน', currentEmployeeId);
-        formData.append('ชื่อสกุล', currentFullName); // Changed to avoid conflict with element 'name'
-        formData.append('IDShop', shopId); // Changed to avoid conflict with element 'name'
+        formData.append('ชื่อสกุล', currentFullName);
+        formData.append('IDShop', shopId);
 
         fetch(scriptURL, { method: 'POST', body: formData })
             .then(response => response.json())
             .then(data => {
+                Swal.close();
                 if (data.result === 'success') {
-                    Swal.fire({
-                        icon: 'success', title: 'บันทึกข้อมูลสำเร็จ!',
-                        showConfirmButton: false, timer: 2000
-                    }).then(() => {
-                        resetPage();
-                    });
-                } else {
-                    throw new Error(data.error || 'Something went wrong');
-                }
+                    // จัดการแสดงผลหน้า Success
+                    const now = new Date();
+                    const optionsDate = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Bangkok' };
+                    const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Bangkok', hour12: false };
+
+                    displayNameSuccess.textContent = currentFullName;
+                    displayDate.textContent = `วันที่: ${now.toLocaleDateString('th-TH', optionsDate)}`;
+                    displayTime.textContent = `เวลา: ${now.toLocaleTimeString('th-TH', optionsTime)} น.`;
+
+                    step2Div.style.display = 'none';
+                    step3Div.style.display = 'block';
+
+                } else { throw new Error(data.error); }
             })
             .catch(error => {
-                console.error('Error!', error.message);
                 Swal.fire('เกิดข้อผิดพลาด!', `ไม่สามารถบันทึกข้อมูลได้: ${error.message}`, 'error');
             });
     }
     
-    // --- Function to reset the page ---
+    // --- Function to reset the page to Step 1 ---
     function resetPage() {
         if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop().catch(err => console.error("Failed to stop scanner on reset", err));
+            html5QrCode.stop().catch(err => {});
         }
         step1Div.style.display = 'block';
         step2Div.style.display = 'none';
+        step3Div.style.display = 'none';
         employeeIdInput.value = '';
-        scannedResult.textContent = 'กรุณาหันกล้องไปที่ QR Code';
         currentEmployeeId = null;
         currentFullName = null;
     }
 
+    cancelScanBtn.addEventListener('click', resetPage);
     resetBtn.addEventListener('click', resetPage);
 </script>
 
