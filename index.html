@@ -167,41 +167,58 @@
             });
     });
 
-    // --- Function to start QR Scanner ---
+    // --- Function to start QR Scanner (REVISED) ---
     function startScanner() {
         html5QrCode = new Html5Qrcode("qr-reader");
 
         const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-            // หยุดการทำงานของสแกนเนอร์เมื่อสแกนสำเร็จ
             if (html5QrCode && html5QrCode.isScanning) {
                 html5QrCode.stop().then(ignore => {
                     saveData(decodedText);
                 }).catch(err => {
-                    console.error("Failed to stop scanner cleanly.", err)
-                    saveData(decodedText); // แม้จะหยุดไม่ได้ ก็ยังต้องบันทึกข้อมูล
+                    console.error("Failed to stop scanner cleanly.", err);
+                    saveData(decodedText);
                 });
             }
         };
 
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
-        // 1. พยายามเริ่มการทำงานด้วยกล้องหลัง (environment) ซึ่งเป็นค่ามาตรฐาน
-        html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
-            .catch(err => {
-                // 2. หากเรียกกล้องหลังไม่สำเร็จ (เช่น ในคอมพิวเตอร์ที่ไม่มีกล้องหลัง)
-                // ให้ลองเรียกใช้กล้องหน้า (user) แทน
-                console.warn("Could not start with environment camera, trying user camera.", err);
-                html5QrCode.start({ facingMode: "user" }, config, qrCodeSuccessCallback)
-                    .catch(finalErr => {
-                        // 3. หากล้มเหลวทั้งสองอย่าง ให้แจ้งผู้ใช้
-                        Swal.fire(
-                            'เกิดข้อผิดพลาด', 
-                            'ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบการตั้งค่าและอนุญาตให้เว็บเข้าถึงกล้อง', 
-                            'error'
-                        );
+        // ** NEW ROBUST METHOD **
+        // This will trigger the permission prompt
+        Html5Qrcode.getCameras().then(cameras => {
+            if (cameras && cameras.length) {
+                // Find the rear camera ('environment') first.
+                let cameraId = cameras.find(camera => camera.facing === 'environment')?.id;
+                // If not found, use the first available camera.
+                if (!cameraId) {
+                    cameraId = cameras[0].id;
+                }
+                
+                html5QrCode.start(
+                        cameraId,
+                        config,
+                        qrCodeSuccessCallback)
+                    .catch(err => {
+                        console.error("Failed to start scanner with a specific camera.", err);
+                        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเริ่มต้นสแกนเนอร์ได้', 'error');
                         resetPage();
                     });
-            });
+            } else {
+                 console.error("No cameras found on this device.");
+                 Swal.fire('ไม่พบกล้อง', 'ไม่พบอุปกรณ์กล้องในเครื่องของคุณ', 'error');
+                 resetPage();
+            }
+        }).catch(err => {
+            // This block specifically handles permission errors
+            console.error("Error getting camera permissions:", err);
+            Swal.fire(
+                'เกิดข้อผิดพลาด',
+                'ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบว่าคุณได้ "อนุญาต" ให้เว็บไซต์เข้าถึงกล้องแล้ว',
+                'error'
+            );
+            resetPage();
+        });
     }
 
     // --- Function to save data to Google Sheet ---
@@ -244,7 +261,7 @@
     // --- Function to reset the page to Step 1 ---
     function resetPage() {
         if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop().catch(err => {});
+            html5QrCode.stop().catch(err => { /* ignore cleanup error */ });
         }
         step1Div.style.display = 'block';
         step2Div.style.display = 'none';
