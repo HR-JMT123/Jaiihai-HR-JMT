@@ -17,7 +17,14 @@
         .status-success {color: #28a745; border: 3px solid #28a745; border-radius: 15px; padding: 2rem; animation: pop-in 0.5s ease-out;}
         .status-success .icon {font-size: 5rem; margin-bottom: 1rem;}
         .status-success h3 {font-weight: 700;}
-        .status-success .datetime {background-color: #eaf6ec; font-size: 1.1rem; padding: 0.75rem; border-radius: 10px; margin-top: 1rem; text-align: left;} /* <-- ปรับเป็นชิดซ้าย */
+        .status-success .datetime {background-color: #eaf6ec; font-size: 1.1rem; padding: 0.75rem; border-radius: 10px; margin-top: 1rem; text-align: left;}
+        
+        /* ================== [ เพิ่มส่วนนี้เข้ามา ] ================== */
+        .status-success p, .status-success .datetime {
+            color: #555555; /* สีเทาเข้ม */
+        }
+        /* ========================================================== */
+
         @keyframes pop-in { 0% {transform: scale(0.5); opacity: 0;} 100% {transform: scale(1); opacity: 1;} }
     </style>
 </head>
@@ -83,7 +90,6 @@
     const displayDate = document.getElementById('displayDate');
     const displayTime = document.getElementById('displayTime');
     const resetBtn = document.getElementById('resetBtn');
-    // --- [ เพิ่ม ] Element ของ ID Shop ---
     const displayShopIdSuccess = document.getElementById('displayShopIdSuccess');
 
 
@@ -157,7 +163,6 @@
             .then(data => {
                 Swal.close();
                 if (data.result === 'success') {
-                    // --- [ แก้ไข ] ส่งค่า shopId ไปด้วย ---
                     showSuccessScreen(shopId);
                 } else {
                     throw new Error(data.message || 'Unknown server error');
@@ -178,14 +183,12 @@
         resetPage();
     }
     
-    // --- [ แก้ไข ] รับค่า shopId เข้ามา ---
     function showSuccessScreen(shopId) {
         const now = new Date();
         const optionsDate = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Bangkok' };
         const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Bangkok', hour12: false };
         
         displayNameSuccess.textContent = currentFullName;
-        // --- [ เพิ่ม ] แสดงผล ID Shop ---
         displayShopIdSuccess.textContent = shopId;
         displayDate.textContent = `${now.toLocaleDateString('th-TH', optionsDate)}`;
         displayTime.textContent = `${now.toLocaleTimeString('th-TH', optionsTime)} น.`;
