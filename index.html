@@ -110,7 +110,7 @@
 
 <script>
     // --- Configuration ---
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbwseWgcZJOrLdjfLlqqUwzWxQx__FRT0XjDoEnLcct8N9ywg8LN15oYTRiSQD_-Tld8TA/exec'; // ◀️ **สำคัญ:** ใส่ URL ของคุณที่นี่
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwseWgcZJOrLdjfLlqqUwzWxQx__FRT0XjDoEnLcct8N9ywg8LN15oYTRiSQD_-Tld8TA/exec';
 
     // --- DOM Elements ---
     const step1Div = document.getElementById('step-1-employee-id');
@@ -167,7 +167,7 @@
             });
     });
 
-    // --- Function to start QR Scanner (REVISED) ---
+    // --- Function to start QR Scanner (REVISED for Rear Camera Only) ---
     function startScanner() {
         html5QrCode = new Html5Qrcode("qr-reader");
 
@@ -184,44 +184,43 @@
 
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
-        // ** NEW ROBUST METHOD **
-        // This will trigger the permission prompt
         Html5Qrcode.getCameras().then(cameras => {
             if (cameras && cameras.length) {
-                // Find the rear camera ('environment') first.
-                let cameraId = cameras.find(camera => camera.facing === 'environment')?.id;
-                // If not found, use the first available camera.
-                if (!cameraId) {
-                    cameraId = cameras[0].id;
-                }
+                // **FIX 2: Find the rear camera ('environment') ONLY.**
+                const rearCamera = cameras.find(camera => camera.facing === 'environment');
                 
-                html5QrCode.start(
-                        cameraId,
+                if (rearCamera) {
+                    html5QrCode.start(
+                        rearCamera.id,
                         config,
-                        qrCodeSuccessCallback)
-                    .catch(err => {
-                        console.error("Failed to start scanner with a specific camera.", err);
+                        qrCodeSuccessCallback
+                    ).catch(err => {
+                        console.error("Failed to start scanner with the rear camera.", err);
                         Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเริ่มต้นสแกนเนอร์ได้', 'error');
                         resetPage();
                     });
+                } else {
+                    console.error("Rear camera not found.");
+                    Swal.fire('ไม่พบกล้องหลัง', 'ไม่พบกล้องหลังในอุปกรณ์ของคุณ', 'error');
+                    resetPage();
+                }
             } else {
                  console.error("No cameras found on this device.");
                  Swal.fire('ไม่พบกล้อง', 'ไม่พบอุปกรณ์กล้องในเครื่องของคุณ', 'error');
                  resetPage();
             }
         }).catch(err => {
-            // This block specifically handles permission errors
             console.error("Error getting camera permissions:", err);
             Swal.fire(
-                'เกิดข้อผิดพลาด',
-                'ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบว่าคุณได้ "อนุญาต" ให้เว็บไซต์เข้าถึงกล้องแล้ว',
+                'เกิดข้อผิดพลาดเรื่องสิทธิ์',
+                'ไม่สามารถเปิดกล้องได้ กรุณา "อนุญาต" ให้เว็บไซต์เข้าถึงกล้องก่อน',
                 'error'
             );
             resetPage();
         });
     }
 
-    // --- Function to save data to Google Sheet ---
+    // --- Function to save data to Google Sheet (REVISED Keys) ---
     function saveData(shopId) {
         Swal.fire({
             title: 'กำลังบันทึกข้อมูล...',
@@ -231,9 +230,10 @@
 
         const formData = new FormData();
         formData.append('action', 'saveScanData');
+        // **FIX 1: Make keys EXACTLY match Google Sheet headers.**
         formData.append('รหัสพนักงาน', currentEmployeeId);
-        formData.append('ชื่อสกุล', currentFullName);
-        formData.append('IDShop', shopId);
+        formData.append('ชื่อ-สกุล', currentFullName); // Changed from 'ชื่อสกุล'
+        formData.append('ID Shop', shopId);          // Changed from 'IDShop'
 
         fetch(scriptURL, { method: 'POST', body: formData })
             .then(response => response.json())
@@ -250,11 +250,13 @@
 
                     step2Div.style.display = 'none';
                     step3Div.style.display = 'block';
-
-                } else { throw new Error(data.error); }
+                } else { 
+                    throw new Error(data.error || 'Unknown error from server'); 
+                }
             })
             .catch(error => {
-                Swal.fire('เกิดข้อผิดพลาด!', `ไม่สามารถบันทึกข้อมูลได้: ${error.message}`, 'error');
+                Swal.fire('บันทึกข้อมูลล้มเหลว!', `ไม่สามารถบันทึกข้อมูลได้: ${error.message}`, 'error');
+                resetPage(); // Reset to allow retrying
             });
     }
     
