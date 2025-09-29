@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scan & Verify - JMT</title>
+    <title>Canteen JMT</title>
 
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -69,7 +69,7 @@
     <img src="https://img5.pic.in.th/file/secure-sv1/-1920-x-300-px.png" alt="Company Logo" style="max-width: 250px; margin-bottom: 2rem;">
     
     <div id="step-1-employee-id">
-        <h3 class="card-title mb-3">ยืนยันตัวตนพนักงาน</h3>
+        <h3 class="card-title mb-3">กรอกรหัสพนักงาน</h3>
         <div class="mb-3 text-left">
             <label for="IdEmployee" class="form-label">Employee ID</label>
             <div class="input-group">
@@ -110,7 +110,7 @@
 
 <script>
     // --- Configuration ---
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbxcHmiYl7gfA6APCq-o5z1cmatmzVy4S2a2WQ5tnSGIGiHfS0T_OyptCVCfBeLQzHHa-g/exec'; // ◀️ **สำคัญ:** ใส่ URL ของคุณที่นี่
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwseWgcZJOrLdjfLlqqUwzWxQx__FRT0XjDoEnLcct8N9ywg8LN15oYTRiSQD_-Tld8TA/exec'; // ◀️ **สำคัญ:** ใส่ URL ของคุณที่นี่
 
     // --- DOM Elements ---
     const step1Div = document.getElementById('step-1-employee-id');
@@ -170,26 +170,37 @@
     // --- Function to start QR Scanner ---
     function startScanner() {
         html5QrCode = new Html5Qrcode("qr-reader");
+
         const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-            html5QrCode.stop().then(ignore => {
-                saveData(decodedText);
-            }).catch(err => console.error("Failed to stop scanner", err));
+            // หยุดการทำงานของสแกนเนอร์เมื่อสแกนสำเร็จ
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(ignore => {
+                    saveData(decodedText);
+                }).catch(err => {
+                    console.error("Failed to stop scanner cleanly.", err)
+                    saveData(decodedText); // แม้จะหยุดไม่ได้ ก็ยังต้องบันทึกข้อมูล
+                });
+            }
         };
 
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-        
-        // --- ส่วนที่แก้ไขเรื่องซูม ---
-        // สร้างเงื่อนไขสำหรับกล้องหลัง พร้อม "ขอ" ให้ใช้ซูม 1x
-        const videoConstraints = {
-            facingMode: "environment",
-            advanced: [{ zoom: 1.0 }]
-        };
 
-        // เริ่มการทำงานของกล้องด้วยเงื่อนไขใหม่
-        html5QrCode.start(videoConstraints, config, qrCodeSuccessCallback)
+        // 1. พยายามเริ่มการทำงานด้วยกล้องหลัง (environment) ซึ่งเป็นค่ามาตรฐาน
+        html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
             .catch(err => {
-                 Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบการตั้งค่าและอนุญาตให้เว็บเข้าถึงกล้อง', 'error');
-                 resetPage();
+                // 2. หากเรียกกล้องหลังไม่สำเร็จ (เช่น ในคอมพิวเตอร์ที่ไม่มีกล้องหลัง)
+                // ให้ลองเรียกใช้กล้องหน้า (user) แทน
+                console.warn("Could not start with environment camera, trying user camera.", err);
+                html5QrCode.start({ facingMode: "user" }, config, qrCodeSuccessCallback)
+                    .catch(finalErr => {
+                        // 3. หากล้มเหลวทั้งสองอย่าง ให้แจ้งผู้ใช้
+                        Swal.fire(
+                            'เกิดข้อผิดพลาด', 
+                            'ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบการตั้งค่าและอนุญาตให้เว็บเข้าถึงกล้อง', 
+                            'error'
+                        );
+                        resetPage();
+                    });
             });
     }
 
